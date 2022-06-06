@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract NeIDR is ERC20{
+contract neIDR is ERC20{
     using SafeERC20 for IERC20;
 
     address public owner;
@@ -27,12 +27,12 @@ contract NeIDR is ERC20{
         owner = msg.sender;
     }
 
-    function mint(address _to, uint _amount) external onlyAuth{
+    function mint(address _to, uint256 _amount) external onlyAuth{
         _mint(_to, _amount);
     }
 
-    function burn(address vault, uint amount) external onlyAuth{
-        _burn(vault, amount);
+    function burn(address _vault, uint256 _amount) external onlyAuth{
+        _burn(_vault, _amount);
     }
 
     function addMinter(address _auth) external onlyOwner{
