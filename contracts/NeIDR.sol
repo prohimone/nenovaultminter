@@ -4,24 +4,27 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 
 contract NeIDR is ERC20{
     using SafeERC20 for IERC20;
+
+    address public owner;
 
     // set of minters, can be this bridge or other bridges
     mapping(address => bool) public isMinter;
     address[] public minters;
 
+    modifier onlyOwner{
+        require(msg.sender == owner, "NeIDR: NOT OWNER");
+        _;
+    }
     modifier onlyAuth{
-        require(isMinter[msg.sender], "NeIDR: FORBIDDEN");
+        require(isMinter[msg.sender], "NeIDR: NOT MINTER");
         _;
     }
 
     constructor() ERC20("NeRupiah", "NeIDR"){
-        minters.push(msg.sender);
-        isMinter[msg.sender] = true;
+        owner = msg.sender;
     }
 
     function mint(address _to, uint _amount) external onlyAuth{
@@ -32,8 +35,17 @@ contract NeIDR is ERC20{
         _burn(vault, amount);
     }
 
-    function revokeMinter(address _auth) external onlyAuth {
+    function addMinter(address _auth) external onlyOwner{
+        minters.push(_auth);
+        isMinter[_auth] = true;
+    }
+
+    function revokeMinter(address _auth) external onlyOwner {
         isMinter[_auth] = false;
+    }    
+    
+    function ratifyMinter (address _auth) external onlyOwner {
+        isMinter[_auth] = true;
     }
 
 

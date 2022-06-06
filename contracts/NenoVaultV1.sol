@@ -22,8 +22,9 @@ contract NenoVaultV1 is Ownable{
     // depositor's balance of neTokens
     mapping (address => uint256) public balanceOf;
 
-    constructor(string memory _name, address _allowedToken){
+    constructor(string memory _name, address _neIDR, address _allowedToken){
         vaultName = _name;
+        neIDR = _neIDR;
         isAllowed[_allowedToken] = true;
         tokens.push(_allowedToken);
     }
