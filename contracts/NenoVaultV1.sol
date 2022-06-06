@@ -5,9 +5,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
 
+interface IneIDR{
+    function mint(address, uint256) external;
+}
+
 contract NenoVaultV1 is Ownable{
 
     string public vaultName;
+
+    address public neIDR;
 
     // list of allowed tokens to be wrapped into neTokens
     mapping (address => bool) public isAllowed;
@@ -25,6 +31,6 @@ contract NenoVaultV1 is Ownable{
     function deposit(address _token, uint256 _amount) public {
         require(isAllowed[_token]==true, "Token is not allowed");
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-        
+        IneIDR(neIDR).mint(msg.sender, _amount);
     }
 }
