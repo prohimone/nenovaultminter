@@ -87,13 +87,16 @@ contract Token {
         return true;
     }
 
+// WARNING!! ADDED UNCHECKED ON THIS FUNCTION TO AVOID ERROR
     function _transfer(
         address _from,
         address _to,
         uint256 _value
     ) internal returns (bool) {
-        balanceOf[_from] -= _value;
-        balanceOf[_to] += _value;
+        unchecked {
+            balanceOf[_from] -= _value;
+            balanceOf[_to] += _value;
+        }
         emit Transfer(_from, _to, _value);
         return true;
     }

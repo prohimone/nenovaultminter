@@ -23,7 +23,7 @@ contract neIDR is ERC20{
         _;
     }
 
-    constructor() ERC20("NeRupiah", "NeIDR"){
+    constructor() ERC20("neRupiah", "neIDR"){
         owner = msg.sender;
     }
 

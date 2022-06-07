@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: Unlicense
+//SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -10,7 +10,7 @@ interface IneIDR{
     function burn(address, uint256) external;
 }
 
-contract NenoVaultV1 is Ownable{
+contract NenoVaultV01 is Ownable{
 
     string public vaultName;
 
@@ -21,7 +21,10 @@ contract NenoVaultV1 is Ownable{
     address[] public tokens;
 
     // tracks depositor's balance of original token
-    mapping (address => mapping (address => uint256)) public balanceOf;
+    // mapping (address => mapping (address => uint256)) public balanceOf;
+    
+    // tracks depositor's balance of tokens deposited (agnostic)
+    mapping (address => uint256) public balanceOf;
 
 
     event LogDeposit(address indexed token, uint amount);
@@ -38,7 +41,8 @@ contract NenoVaultV1 is Ownable{
         require(isAllowed[_token]==true, "NENOVAULT: Token is not allowed");
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
-        balanceOf[msg.sender][_token] += _amount;
+        // balanceOf[msg.sender][_token] += _amount;
+        balanceOf[msg.sender] += _amount;
         IneIDR(neIDR).mint(msg.sender, _amount);
 
         emit LogDeposit(_token,_amount);
@@ -46,11 +50,13 @@ contract NenoVaultV1 is Ownable{
     }
 
     function withdraw(address _token, uint256 _amount) public returns (bool){ //add nonreentrant and prereq
-        require(isAllowed[_token]==true, "NENOVAULT: Token is not allowed");
-        require(balanceOf[msg.sender][_token] >= _amount, "NENOVAULT: exceeding deposit balance");
+        require(isAllowed[_token]==true, "NENOVAULT: Token is unavailable to withdraw");
+        // require(balanceOf[msg.sender][_token] >= _amount, "NENOVAULT: exceeding deposit balance");
+        require(IERC20(_token).balanceOf(address(this)) >= _amount, "NENOVAULT: Contract does not have any tokens to withdraw");
 
         IERC20(neIDR).transferFrom(msg.sender, address(this), _amount);
-        balanceOf[msg.sender][_token] -= _amount;
+        // balanceOf[msg.sender][_token] -= _amount;
+        balanceOf[msg.sender] -= _amount;
         IneIDR(neIDR).burn(address(this), _amount);
         IERC20(_token).transfer(msg.sender, _amount);
 
@@ -58,11 +64,20 @@ contract NenoVaultV1 is Ownable{
         return true;
     }
 
-    function vaultBalance() public view returns (uint256){
+    function totalVaultBalance() public view returns (uint256){
         uint256 total = 0;
         for(uint i = 0; i < tokens.length; i++){
             total += IERC20(tokens[i]).balanceOf(address(this));
         }
         return total;
+    }
+
+    function tokenVaultBalance(address _token) public view returns (uint256){
+        require(isAllowed[_token]==true, "NENOVAULT: Token is not allowed");
+        return IERC20(_token).balanceOf(address(this));
+    }
+
+    function isSolvent() public view returns (bool){
+        return IERC20(neIDR).totalSupply() == totalVaultBalance();
     }
 }
