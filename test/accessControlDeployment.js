@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("core", function () {
+describe("accessControls & Deployment", function () {
 
     let token;
     let bidr;
@@ -57,17 +57,16 @@ describe("core", function () {
         expect(await neidr.totalSupply()).to.equal(0);
     });
 
-
     it("deploy NenoVault allowing bidr and test total vault balance", async function () {
         const nenovault = await ethers.getContractFactory("NenoVaultV01");
         vaultMinter = await nenovault.deploy("IDR", neidr.address, bidr.address)
         await vaultMinter.deployed();
 
-        expect(await vaultMinter.totalVaultBalance()).to.equal(0);
+        expect(await vaultMinter.vaultBalance()).to.equal(0);
     });
 
-    it("confirm BIDR is allowed as deposit", async function () {
-        expect(await vaultMinter.isAllowed(bidr.address)).to.equal(true);
+    it("add BIDR again as allowed deposit from owner", async function () {
+        await expect(vaultMinter.addAllowableToken(bidr.address)).to.be.reverted
     });
 
     it("set NenoVault as neIDR minter", async function () {
@@ -75,16 +74,32 @@ describe("core", function () {
         expect(await neidr.isMinter(vaultMinter.address)).to.equal(true);
     });
 
-    it("deposit to NenoVault and test user1 balance in vault", async function () {
-        const bidr_100000000 = ethers.BigNumber.from("100000000000000000000000000");
-        await bidr.approve(vaultMinter.address, bidr_100000000);
-        await vaultMinter.deposit(bidr.address, bidr_100000000);
-
-        expect(await vaultMinter.balanceOf(owner.address)).to.equal(bidr_100000000);
+    it("confirm owner is neIDR owner", async function () {
+        expect(await neidr.owner()).to.equal(owner.address);
     });
 
-    it("confirm user1 balance is equal to total vault balance", async function () {
-        expect(await vaultMinter.balanceOf(owner.address)).to.equal(await vaultMinter.totalVaultBalance());
+    it("confirm owner can't mint neIDR", async function () {
+        await expect(neidr.mint(owner.address, 10000)).to.be.reverted
     });
-      
+
+    it("confirm other users can't mint neIDR", async function () {
+        await expect(neidr.connect(user1).mint(owner.address, 10000)).to.be.reverted
+    });
+
+    it("confirm BIDR is allowed as deposit", async function () {
+        expect(await vaultMinter.isAllowed(bidr.address)).to.equal(true);
+    });
+
+    it("add IDRT as allowed deposit from not owner", async function () {
+        await expect(vaultMinter.connect(user1).addAllowableToken(idrt.address)).to.be.reverted
+    });
+
+    it("add IDRT as allowed deposit from owner", async function () {
+        await vaultMinter.addAllowableToken(idrt.address)
+    });
+
+    it("confirm IDRT is allowed as deposit", async function () {
+        expect(await vaultMinter.isAllowed(bidr.address)).to.equal(true);
+    });
+
 });
