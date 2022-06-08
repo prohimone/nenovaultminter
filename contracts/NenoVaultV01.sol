@@ -16,10 +16,10 @@ contract NenoVaultV01 is Ownable{
 
     string public vaultName;
 
-    address public neIDR;
+    address public neToken;
 
     // list of allowed tokens to be wrapped into neTokens
-     mapping (address => uint16) public tokenDecimals;
+    mapping (address => uint16) public tokenDecimals;
     mapping (address => bool) public isAllowed;
     address[] public allowedTokens;
 
@@ -34,9 +34,9 @@ contract NenoVaultV01 is Ownable{
     event LogDeposit(address indexed token, uint amount);
     event LogWithdraw(address indexed token, uint amount);
 
-    constructor(string memory _name, address _neIDR, address _allowedToken){
+    constructor(string memory _name, address _neToken, address _allowedToken){
         vaultName = _name;
-        neIDR = _neIDR;
+        neToken = _neToken;
         isAllowed[_allowedToken] = true;
         allowedTokens.push(_allowedToken);
     }
@@ -53,7 +53,7 @@ contract NenoVaultV01 is Ownable{
 
         IERC20(_token).transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
-        IneIDR(neIDR).mint(msg.sender, _amount);
+        IneIDR(neToken).mint(msg.sender, _amount);
 
         emit LogDeposit(_token,_amount);
         return true;
@@ -64,9 +64,9 @@ contract NenoVaultV01 is Ownable{
         require(balanceOf[msg.sender] >= _amount, "NENOVAULT: user does not have any funds in the vault");
         require(IERC20(_token).balanceOf(address(this)) >= _amount, "NENOVAULT: Vault does not have anymore of this token to withdraw");
 
-        IERC20(neIDR).transferFrom(msg.sender, address(this), _amount);
+        IERC20(neToken).transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] -= _amount;
-        IneIDR(neIDR).burn(address(this), _amount);
+        IneIDR(neToken).burn(address(this), _amount);
         IERC20(_token).transfer(msg.sender, _amount);
 
         emit LogWithdraw(_token, _amount);
@@ -87,7 +87,14 @@ contract NenoVaultV01 is Ownable{
     }
 
     function isSolvent() public view returns (bool){
-        return IERC20(neIDR).totalSupply() == vaultBalance();
+        return IERC20(neToken).totalSupply() == vaultBalance();
     }
 
+    function neTokenName() public view returns (string memory){
+        return IERC20(neToken).name();
+    }
+
+    function neTokenSymbol() public view returns (string memory){
+        return IERC20(neToken).symbol();
+    }
 }

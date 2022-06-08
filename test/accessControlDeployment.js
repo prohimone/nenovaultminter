@@ -65,6 +65,10 @@ describe("accessControls & Deployment", function () {
         expect(await vaultMinter.vaultBalance()).to.equal(0);
     });
 
+    it("confirm NenoVault name is only for IDR", async function () {
+        expect(await vaultMinter.vaultName()).to.equal("IDR")
+    });
+
     it("add BIDR again as allowed deposit from owner", async function () {
         await expect(vaultMinter.addAllowableToken(bidr.address)).to.be.reverted
     });
@@ -72,6 +76,10 @@ describe("accessControls & Deployment", function () {
     it("set NenoVault as neIDR minter", async function () {
         await neidr.addMinter(vaultMinter.address);
         expect(await neidr.isMinter(vaultMinter.address)).to.equal(true);
+    });
+
+    it("confirm NenoVault exclusively mints neIDR", async function () {
+        expect(await vaultMinter.neTokenSymbol()).to.equal("neIDR")
     });
 
     it("confirm owner is neIDR owner", async function () {
