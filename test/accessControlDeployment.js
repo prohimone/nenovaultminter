@@ -22,10 +22,10 @@ describe("accessControls & Deployment", function () {
         await bidr.mint(user1.address, ethers.BigNumber.from("1000000000000000000000000000000"));
         await bidr.mint(user2.address, ethers.BigNumber.from("1000000000000000000000000000000"));
         await bidr.mint(user3.address, ethers.BigNumber.from("1000000000000000000000000000000"));
-        idrt = await token.deploy('IDRT', 'IDRT', 18, owner.address);
-        await idrt.mint(user1.address, ethers.BigNumber.from("1000000000000000000000000000000"));
-        await idrt.mint(user2.address, ethers.BigNumber.from("1000000000000000000000000000000"));
-        await idrt.mint(user3.address, ethers.BigNumber.from("1000000000000000000000000000000"));
+        idrt = await token.deploy('IDRT', 'IDRT', 2, owner.address);
+        await idrt.mint(user1.address, ethers.BigNumber.from("100000000000000"));
+        await idrt.mint(user2.address, ethers.BigNumber.from("100000000000000"));
+        await idrt.mint(user3.address, ethers.BigNumber.from("100000000000000"));
         xidr = await token.deploy('XIDR', 'XIDR', 18, owner.address);
         await xidr.mint(user1.address, ethers.BigNumber.from("1000000000000000000000000000000"));
         await xidr.mint(user2.address, ethers.BigNumber.from("1000000000000000000000000000000"));
@@ -59,10 +59,14 @@ describe("accessControls & Deployment", function () {
 
     it("deploy NenoVault allowing bidr and test total vault balance", async function () {
         const nenovault = await ethers.getContractFactory("NenoVaultV01");
-        vaultMinter = await nenovault.deploy("IDR", neidr.address, bidr.address)
+        vaultMinter = await nenovault.deploy("IDR", neidr.address, bidr.address, bidr.decimals())
         await vaultMinter.deployed();
 
         expect(await vaultMinter.vaultBalance()).to.equal(0);
+    });
+
+    it("confirm BIDR decimals is 18", async function () {
+        expect(await bidr.decimals()).to.equal(await vaultMinter.tokenDecimals(bidr.address))
     });
 
     it("confirm NenoVault name is only for IDR", async function () {
@@ -70,7 +74,7 @@ describe("accessControls & Deployment", function () {
     });
 
     it("add BIDR again as allowed deposit from owner", async function () {
-        await expect(vaultMinter.addAllowableToken(bidr.address)).to.be.reverted
+        await expect(vaultMinter.addAllowableToken(bidr.address, bidr.decimals())).to.be.reverted
     });
 
     it("set NenoVault as neIDR minter", async function () {
@@ -99,15 +103,18 @@ describe("accessControls & Deployment", function () {
     });
 
     it("add IDRT as allowed deposit from not owner", async function () {
-        await expect(vaultMinter.connect(user1).addAllowableToken(idrt.address)).to.be.reverted
+        await expect(vaultMinter.connect(user1).addAllowableToken(idrt.address), idrt.decimals()).to.be.reverted
     });
 
     it("add IDRT as allowed deposit from owner", async function () {
-        await vaultMinter.addAllowableToken(idrt.address)
+        await vaultMinter.addAllowableToken(idrt.address, idrt.decimals())
     });
 
     it("confirm IDRT is allowed as deposit", async function () {
         expect(await vaultMinter.isAllowed(bidr.address)).to.equal(true);
     });
 
+    it("confirm IDRT decimals is 2", async function () {
+        expect(await bidr.decimals()).to.equal(await vaultMinter.tokenDecimals(bidr.address))
+    });
 });

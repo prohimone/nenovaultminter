@@ -22,10 +22,6 @@ contract NenoVaultV01 is Ownable{
     mapping (address => uint16) public tokenDecimals;
     mapping (address => bool) public isAllowed;
     address[] public allowedTokens;
-
-
-    // tracks depositor's balance of original token
-    // mapping (address => mapping (address => uint256)) public balanceOf;
     
     // tracks depositor's balance of tokens deposited (agnostic)
     mapping (address => uint256) public balanceOf;
@@ -34,20 +30,23 @@ contract NenoVaultV01 is Ownable{
     event LogDeposit(address indexed token, uint amount);
     event LogWithdraw(address indexed token, uint amount);
 
-    constructor(string memory _name, address _neToken, address _allowedToken){
+    constructor(string memory _name, address _neToken, address _allowedToken, uint8 _decimals){
         vaultName = _name;
         neToken = _neToken;
         isAllowed[_allowedToken] = true;
+        tokenDecimals[_allowedToken] = _decimals;
         allowedTokens.push(_allowedToken);
     }
 
-    function addAllowableToken(address _token) public onlyOwner returns (bool) {
+    function addAllowableToken(address _token, uint8 _decimals) public onlyOwner returns (bool) {
         require(isAllowed[_token] != true, "NENOVAULT: Token is already allowed");
         isAllowed[_token] = true;
+        tokenDecimals[_token] = _decimals;
         allowedTokens.push(_token);
         return true;
     }
 
+    // ADD COMPATIBILITY WITH MULTIPLE DECIMALS. E.G. MINT 18 decimals of neIDR with 2 decimals of IDRT
     function deposit(address _token, uint256 _amount) public returns (bool) { //add prereq
         require(isAllowed[_token]==true, "NENOVAULT: Token is not allowed");
 
@@ -59,6 +58,7 @@ contract NenoVaultV01 is Ownable{
         return true;
     }
 
+    // ADD COMPATIBILITY WITH MULTIPLE DECIMALS. E.G. USERS WANT TO GET IDRT THEN CONVERT neIDR from 18 dec to 2 dec then redeem
     function withdraw(address _token, uint256 _amount) public returns (bool){ //add nonreentrant and prereq
         require(isAllowed[_token]==true, "NENOVAULT: Token is unavailable to withdraw");
         require(balanceOf[msg.sender] >= _amount, "NENOVAULT: user does not have any funds in the vault");
